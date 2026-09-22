@@ -1,0 +1,107 @@
+# ============================================================
+# Git Ignore Configuration - PhytoVision-X
+# ============================================================
+
+# --- Python & Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Virtual Environments ---
+.venv/
+venv/
+ENV/
+env/
+*/.venv/
+*/venv/
+
+# --- Environment Variables & Secrets ---
+.env
+.env.*
+*.env
+!*.env.example
+*.pem
+*.key
+*.cert
+*.crt
+
+# --- SQLite & Local Databases ---
+*.db
+*.sqlite
+*.sqlite3
+phytovision.db
+
+# --- Large Model Files & Weights ---
+*.pth
+*.pt
+*.h5
+*.hdf5
+*.onnx
+*.tflite
+*.ckpt
+*.pb
+*.pkl
+models/**/*
+!models/**/
+!models/**/.gitkeep
+!models/README.md
+
+# --- Datasets ---
+data/**/*
+!data/**/
+!data/**/.gitkeep
+!data/README.md
+
+# --- Uploaded Files & Generated Outputs ---
+uploads/**/*
+!uploads/**/
+!uploads/**/.gitkeep
+backend/uploads/**/*
+!backend/uploads/**/
+!backend/uploads/**/.gitkeep
+
+# --- Node & Frontend Build ---
+node_modules/
+*/node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+dist/
+dist-ssr/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- IDEs & OS System Files ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

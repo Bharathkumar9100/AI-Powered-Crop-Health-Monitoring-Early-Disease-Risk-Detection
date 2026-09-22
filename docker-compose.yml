@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: phytovision-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=PhytoVision-X
+      - DEMO_MODE=true
+      - DEBUG=false
+      - DATABASE_URL=sqlite+aiosqlite:///./phytovision.db
+      - FRONTEND_URL=http://localhost:5173
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backend/data:/app/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: phytovision-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
