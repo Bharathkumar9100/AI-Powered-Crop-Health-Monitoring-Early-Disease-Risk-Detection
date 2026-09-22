@@ -42,7 +42,8 @@ def generate_demo_gradcam(image: np.ndarray, save_dir: str) -> Tuple[str, str]:
     heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min() + 1e-8)
 
     # Apply colormap
-    heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap), cv2.COLORMAP_JET)
+    heatmap_uint8 = (255 * heatmap).astype(np.uint8)
+    heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
     heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
 
     # Create overlay
@@ -138,7 +139,7 @@ def generate_real_gradcam(
 
             orig_h, orig_w = image.shape[:2]
             heatmap_resized = cv2.resize(cam_np, (orig_w, orig_h))
-            heatmap_uint8 = np.uint8(255 * heatmap_resized)
+            heatmap_uint8 = (255 * heatmap_resized).astype(np.uint8)
             heatmap_color = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
             heatmap_rgb = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
 
