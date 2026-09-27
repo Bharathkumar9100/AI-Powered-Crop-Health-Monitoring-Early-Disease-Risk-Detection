@@ -117,9 +117,9 @@ async def get_ndvi_timeseries(
 
     data = [
         NdviTimeSeriesPoint(
-            date=obs.observation_date,
-            ndvi_mean=obs.ndvi_mean or 0,
-            health_status=obs.health_status or "unknown",
+            date=getattr(obs, "observation_date"),
+            ndvi_mean=float(getattr(obs, "ndvi_mean", 0) or 0),
+            health_status=str(getattr(obs, "health_status", "unknown") or "unknown"),
         )
         for obs in observations
     ]

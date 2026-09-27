@@ -112,6 +112,8 @@ def generate_real_gradcam(
 
             model.zero_grad()
             output = model(tensor)
+            if hasattr(output, "logits"):
+                output = output.logits
 
             if class_idx is None:
                 class_idx = int(output.argmax(dim=1).item())

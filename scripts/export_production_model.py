@@ -71,14 +71,16 @@ def build_and_export():
         model = models.efficientnet_b0(weights=None)
 
     in_features = int(getattr(model.classifier[1], "in_features", 1280))
-    model.classifier = nn.Sequential(
-        nn.Dropout(p=0.3, inplace=True),
-        nn.Linear(in_features, num_classes),
-    )
+    classifier_layer = nn.Linear(in_features, num_classes)
 
     # Initialize classification head with Xavier normal initialization
-    nn.init.xavier_normal_(model.classifier[1].weight)
-    nn.init.zeros_(model.classifier[1].bias)
+    nn.init.xavier_normal_(classifier_layer.weight)
+    nn.init.zeros_(classifier_layer.bias)
+
+    model.classifier = nn.Sequential(
+        nn.Dropout(p=0.3, inplace=True),
+        classifier_layer,
+    )
 
     # Export production weights checkpoint
     checkpoint = {

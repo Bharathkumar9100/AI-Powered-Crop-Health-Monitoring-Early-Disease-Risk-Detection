@@ -46,7 +46,7 @@ async def send_message(
         await db.refresh(conversation)
 
     # Load existing messages
-    messages = json.loads(conversation.messages)
+    messages = json.loads(str(getattr(conversation, "messages", "[]") or "[]"))
 
     # Add farmer message
     messages.append({
@@ -57,7 +57,8 @@ async def send_message(
     })
 
     # Get AI response
-    context = json.loads(conversation.context) if conversation.context else data.context
+    raw_ctx = getattr(conversation, "context", None)
+    context = json.loads(str(raw_ctx)) if raw_ctx else data.context
     response_text, is_demo = await get_chat_response(
         message=data.message,
         language=data.language,
@@ -74,14 +75,14 @@ async def send_message(
     })
 
     # Update conversation
-    conversation.messages = json.dumps(messages)
-    conversation.language = data.language
+    setattr(conversation, "messages", json.dumps(messages))
+    setattr(conversation, "language", data.language)
     if data.context:
-        conversation.context = json.dumps(data.context)
+        setattr(conversation, "context", json.dumps(data.context))
     await db.flush()
 
     return ChatResponse(
-        conversation_id=int(conversation.id),
+        conversation_id=int(getattr(conversation, "id")),
         response=response_text,
         language=data.language,
         is_demo=is_demo,
@@ -103,9 +104,9 @@ async def get_chat_history(
 
     return [
         ChatHistoryResponse(
-            conversation_id=int(conv.id),
-            messages=[ChatMessage(**m) for m in json.loads(conv.messages)],
-            language=conv.language,
+            conversation_id=int(getattr(conv, "id")),
+            messages=[ChatMessage(**m) for m in json.loads(str(getattr(conv, "messages", "[]") or "[]"))],
+            language=str(getattr(conv, "language", "en") or "en"),
             created_at=getattr(conv, "created_at"),
         )
         for conv in conversations

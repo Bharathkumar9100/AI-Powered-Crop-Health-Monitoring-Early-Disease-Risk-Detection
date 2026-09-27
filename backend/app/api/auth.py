@@ -52,7 +52,7 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.username == data.username))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(data.password, user.hashed_password):
+    if not user or not verify_password(data.password, str(getattr(user, "hashed_password", ""))):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -83,9 +83,9 @@ async def update_settings(
 ):
     """Update user settings."""
     if data.full_name is not None:
-        current_user.full_name = data.full_name
+        setattr(current_user, "full_name", data.full_name)
     if data.language is not None:
-        current_user.language = data.language
+        setattr(current_user, "language", data.language)
     await db.flush()
     await db.refresh(current_user)
     return UserResponse.model_validate(current_user)

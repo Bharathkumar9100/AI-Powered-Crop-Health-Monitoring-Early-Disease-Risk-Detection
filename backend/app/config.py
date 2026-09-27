@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./phytovision.db"
 
     # --- ML Model ---
-    MODEL_PATH: str = "models/plant_disease_model.pth"
-    MODEL_TYPE: str = "efficientnet_b0"
+    MODEL_PATH: str = "models/plant_disease_model"
+    MODEL_TYPE: str = "mobilenet_v2"
 
     # --- File Upload ---
     UPLOAD_DIR: str = "uploads"

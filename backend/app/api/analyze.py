@@ -31,12 +31,17 @@ def _get_model():
     """Get or initialize the ML model."""
     global _model
     if _model is None:
-        if settings.DEMO_MODE or not settings.model_weights_path.exists():
-            from app.ml.demo_model import DemoModel
-            _model = DemoModel()
-        else:
+        from pathlib import Path
+        model_dir = Path("models/plant_disease_model")
+        if model_dir.exists():
+            from app.ml.plant_classifier import PlantDiseaseClassifier
+            _model = PlantDiseaseClassifier(str(model_dir))
+        elif settings.model_weights_path.exists() and not settings.DEMO_MODE:
             from app.ml.plant_classifier import PlantDiseaseClassifier
             _model = PlantDiseaseClassifier(str(settings.model_weights_path))
+        else:
+            from app.ml.demo_model import DemoModel
+            _model = DemoModel()
     return _model
 
 
@@ -154,7 +159,7 @@ async def analyze_image(
     )
 
     return ImageAnalysisResponse(
-        prediction_id=int(db_prediction.id),
+        prediction_id=int(getattr(db_prediction, "id")),
         image_url=clean_image_url,
         gradcam_url=clean_overlay_url,
         overlay_url=clean_overlay_url,
@@ -227,7 +232,7 @@ async def analyze_uav(
     clean_risk_path = str(raw_risk_path).replace("\\", "/").lstrip("/") if raw_risk_path else None
 
     return UavAnalysisResponse(
-        scan_id=int(scan.id),
+        scan_id=int(getattr(scan, "id")),
         image_url=f"/uploads/{clean_uav_image}",
         risk_map_url=f"/uploads/{clean_risk_path}" if clean_risk_path else None,
         regions_detected=analysis["regions_detected"],
@@ -262,12 +267,13 @@ async def get_predictions(
     items = []
     for p in predictions:
         clean_p_image = str(p.image_path).replace("\\", "/").lstrip("/")
+        p_conf = getattr(p, "confidence", None)
         items.append(PredictionHistoryItem(
-            id=int(p.id),
+            id=int(getattr(p, "id")),
             image_url=f"/uploads/{clean_p_image}",
             crop_name=str(p.crop_name) if p.crop_name is not None else None,
             disease_name=str(p.disease_name) if p.disease_name is not None else None,
-            confidence=float(p.confidence) if p.confidence is not None else None,
+            confidence=float(p_conf) if p_conf is not None else None,
             risk_level=str(p.risk_level) if p.risk_level is not None else None,
             is_healthy=bool(p.is_healthy),
             is_demo=bool(p.is_demo),

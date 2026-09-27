@@ -42,16 +42,21 @@ async def get_field_risk(
 
     # Generate risk zones
     risk_zones = []
-    if field.latitude and field.longitude:
-        if settings.DEMO_MODE or not predictions:
+    raw_lat = getattr(field, "latitude", None)
+    raw_lng = getattr(field, "longitude", None)
+    if raw_lat is not None and raw_lng is not None:
+        lat = float(raw_lat)
+        lng = float(raw_lng)
+        pred_list = list(predictions)
+        if settings.DEMO_MODE or not pred_list:
             # Demo risk zones around the field center
-            risk_zones = _generate_demo_risk_zones(field.latitude, field.longitude)
+            risk_zones = _generate_demo_risk_zones(lat, lng)
         else:
             # Generate from actual prediction data
-            high_risk = [p for p in predictions if p.risk_level == "high"]
+            high_risk = [p for p in pred_list if getattr(p, "risk_level") == "high"]
             if high_risk:
                 risk_zones = _generate_risk_zones_from_predictions(
-                    field.latitude, field.longitude, predictions
+                    lat, lng, pred_list
                 )
 
     # Determine overall risk
