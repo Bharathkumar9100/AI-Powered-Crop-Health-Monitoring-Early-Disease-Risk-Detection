@@ -96,6 +96,10 @@ const sanitizeMediaUrl = (url?: string): string | undefined => {
   let clean = url.replace(/\\/g, '/');
   if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
   clean = clean.replace(/^\/+/, '');
+  if (API_BASE_URL) {
+    const base = API_BASE_URL.replace(/\/+$/, '');
+    return `${base}/${clean}`;
+  }
   return `/${clean}`;
 };
 
