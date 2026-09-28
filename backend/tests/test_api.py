@@ -14,6 +14,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
 from app.main import app
+from app.database import init_db
+
+
+@pytest.fixture(autouse=True)
+async def setup_database():
+    """Ensure database tables and demo seed user are initialized."""
+    await init_db()
 
 
 @pytest.mark.anyio
@@ -25,6 +32,18 @@ async def test_health_check():
         data = res.json()
         assert data["status"] == "healthy"
         assert "app_name" in data
+
+
+@pytest.mark.anyio
+async def test_unauthenticated_chat():
+    """Verify visitors and guest farmers can ask disease questions without login."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.post("/api/chat", json={"message": "How do I treat powdery mildew on squash?", "language": "en"})
+        assert res.status_code == 200
+        data = res.json()
+        assert "response" in data
+        assert "Powdery Mildew" in data["response"]
 
 
 @pytest.mark.anyio
