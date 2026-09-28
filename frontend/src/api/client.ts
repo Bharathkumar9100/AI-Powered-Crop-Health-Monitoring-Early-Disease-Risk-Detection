@@ -12,7 +12,8 @@ import {
   User,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BACKEND_URL = 'https://ai-powered-crop-health-monitoring-early.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || BACKEND_URL;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
