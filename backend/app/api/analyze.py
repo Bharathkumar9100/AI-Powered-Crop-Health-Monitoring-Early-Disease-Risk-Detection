@@ -60,12 +60,15 @@ async def analyze_image(
     from app.ml.grad_cam import generate_demo_gradcam, generate_real_gradcam
 
     # Validate field ownership if provided
+    field_crop = None
     if field_id:
         result = await db.execute(
             select(Field).where(Field.id == field_id, Field.user_id == current_user.id)
         )
-        if not result.scalar_one_or_none():
+        field_obj = result.scalar_one_or_none()
+        if not field_obj:
             raise HTTPException(status_code=404, detail="Field not found")
+        field_crop = field_obj.crop
 
     # Save uploaded image
     image_content = await image.read()
@@ -75,24 +78,33 @@ async def analyze_image(
     # Load and analyze
     img_array = load_image_from_bytes(image_content)
     model = _get_model()
-    prediction = model.predict(img_array)
+    prediction = model.predict(img_array, crop_hint=field_crop)
 
-    # Generate Grad-CAM
-    gradcam_dir = str(settings.upload_path / "gradcam")
-    if prediction.is_demo or model.get_model() is None:
-        heatmap_path, overlay_path = generate_demo_gradcam(img_array, gradcam_dir)
-    else:
-        # Find predicted class index for Grad-CAM
-        class_names = model.get_class_names()
-        class_idx = None
-        for i, name in enumerate(class_names):
-            if prediction.crop_name in name and (prediction.disease_name in name or prediction.is_healthy):
-                class_idx = i
-                break
-        heatmap_path, overlay_path = generate_real_gradcam(
-            model.get_model(), model.get_target_layer(),
-            img_array, class_idx, gradcam_dir,
-        )
+    # Generate Grad-CAM ONLY for diseased leaves (healthy leaves have no disease lesion heatmaps)
+    overlay_path = None
+    heatmap_path = None
+    if not prediction.is_healthy:
+        gradcam_dir = str(settings.upload_path / "gradcam")
+        if prediction.is_demo or model.get_model() is None:
+            heatmap_path, overlay_path = generate_demo_gradcam(img_array, gradcam_dir)
+        else:
+            # Find predicted class index for Grad-CAM
+            class_names = model.get_class_names()
+            class_idx = None
+            for i, name in enumerate(class_names):
+                if prediction.crop_name.lower() in name.lower() and prediction.disease_name.lower() in name.lower():
+                    class_idx = i
+                    break
+            if class_idx is None:
+                for i, name in enumerate(class_names):
+                    if prediction.crop_name.lower() in name.lower():
+                        class_idx = i
+                        break
+            if class_idx is not None and model.get_target_layer() is not None:
+                heatmap_path, overlay_path = generate_real_gradcam(
+                    model.get_model(), model.get_target_layer(),
+                    img_array, class_idx, gradcam_dir,
+                )
 
     # Save prediction to database
     db_prediction = Prediction(

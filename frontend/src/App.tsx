@@ -18,6 +18,7 @@ const MainApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [unreadAlerts, setUnreadAlerts] = useState<number>(0);
   const [chatContext, setChatContext] = useState<any>(null);
+  const [selectedFieldForAnalyze, setSelectedFieldForAnalyze] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -44,6 +45,7 @@ const MainApp: React.FC = () => {
       case 'leaf-diagnosis':
         return (
           <AnalyzePage
+            initialFieldId={selectedFieldForAnalyze}
             onNavigateToChatWithContext={handleNavigateToChatWithContext}
           />
         );
@@ -54,7 +56,16 @@ const MainApp: React.FC = () => {
       case 'risk-map':
         return <RiskMapPage />;
       case 'fields':
-        return <FieldsPage onNavigate={setActiveTab} />;
+        return (
+          <FieldsPage
+            onNavigate={(tab: string, fieldId?: number) => {
+              if (fieldId) {
+                setSelectedFieldForAnalyze(fieldId);
+              }
+              setActiveTab(tab);
+            }}
+          />
+        );
       case 'ai-advisor':
         return (
           <ChatPage

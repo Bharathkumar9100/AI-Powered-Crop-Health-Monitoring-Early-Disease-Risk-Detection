@@ -86,3 +86,57 @@ def image_to_bytes(image: np.ndarray, format: str = "PNG") -> bytes:
     buffer = io.BytesIO()
     img.save(buffer, format=format)
     return buffer.getvalue()
+
+
+def analyze_leaf_health_metrics(image: np.ndarray) -> dict:
+    """
+    Botanical color, chlorophyll index, and necrotic lesion analysis for plant leaf health assessment.
+    Calculates Excess Green Index (ExG), Green-to-Red ratio, and necrotic lesion coverage.
+    """
+    img_float = image.astype(np.float32)
+    r = img_float[:, :, 0]
+    g = img_float[:, :, 1]
+    b = img_float[:, :, 2]
+
+    # Mask non-extreme background pixels
+    brightness = (r + g + b) / 3.0
+    leaf_mask = (brightness > 20) & (brightness < 248)
+    total_leaf_pixels = int(np.count_nonzero(leaf_mask))
+    if total_leaf_pixels < 100:
+        total_leaf_pixels = image.shape[0] * image.shape[1]
+        leaf_mask = np.ones((image.shape[0], image.shape[1]), dtype=bool)
+
+    # ExG (Excess Green index) = 2G - R - B
+    exg = 2.0 * g - r - b
+    mean_exg = float(np.mean(exg[leaf_mask]))
+
+    # Dominant healthy green pixels
+    healthy_green_mask = leaf_mask & (g > r) & (g > b) & (exg > 15)
+    healthy_green_ratio = float(np.count_nonzero(healthy_green_mask) / total_leaf_pixels)
+
+    # Necrotic lesion pixels (brown, black, dark yellow rust / blight spots)
+    lesion_mask = leaf_mask & (
+        # Brown / Necrotic spots (R higher than G or equal with low blue)
+        ((r > g + 8) & (b < 125)) |
+        # Yellowing / Chlorosis / Rust (high R & G, very low B)
+        ((r > 125) & (g > 115) & (b < 75) & (r >= g - 15)) |
+        # Dark necrotic spots (very low G compared to average)
+        ((g < 55) & (brightness < 60) & (r >= g))
+    )
+    lesion_ratio = float(np.count_nonzero(lesion_mask) / total_leaf_pixels)
+
+    # A leaf is botanically healthy if:
+    # 1. Healthy green coverage is dominant (>= 35% of leaf area)
+    # 2. Lesion ratio is very low (< 3.5%)
+    # 3. Mean ExG is positive (> 15)
+    is_botanically_healthy = bool(
+        (healthy_green_ratio >= 0.35) and (lesion_ratio < 0.035) and (mean_exg > 15.0)
+    )
+
+    return {
+        "mean_exg": round(mean_exg, 1),
+        "healthy_green_ratio": round(healthy_green_ratio, 3),
+        "lesion_ratio": round(lesion_ratio, 3),
+        "is_botanically_healthy": is_botanically_healthy,
+    }
+

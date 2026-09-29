@@ -17,7 +17,7 @@ import { fieldsApi } from '../api/client';
 import { Field } from '../types';
 
 interface FieldsPageProps {
-  onNavigate: (tab: string) => void;
+  onNavigate: (tab: string, fieldId?: number) => void;
 }
 
 export const FieldsPage: React.FC<FieldsPageProps> = ({ onNavigate }) => {
@@ -164,9 +164,9 @@ export const FieldsPage: React.FC<FieldsPageProps> = ({ onNavigate }) => {
             <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-1">
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => onNavigate('leaf-diagnosis')}
+                  onClick={() => onNavigate('leaf-diagnosis', field.id)}
                   className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 hover:border-emerald-500/30 transition"
-                  title="Diagnose leaf disease"
+                  title={`Diagnose leaf disease for ${field.name}`}
                 >
                   <ScanLine className="w-4 h-4" />
                 </button>

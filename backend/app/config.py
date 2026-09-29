@@ -54,7 +54,18 @@ class Settings(BaseSettings):
 
     @property
     def model_weights_path(self) -> Path:
-        return Path(self.MODEL_PATH)
+        p = Path(self.MODEL_PATH)
+        if p.exists():
+            return p
+        # Check relative to backend/app/config.py (workspace root)
+        root_dir = Path(__file__).resolve().parent.parent.parent
+        p_root = root_dir / self.MODEL_PATH
+        if p_root.exists():
+            return p_root
+        p_parent = Path.cwd().parent / self.MODEL_PATH
+        if p_parent.exists():
+            return p_parent
+        return p
 
     @property
     def allowed_extensions_list(self) -> list[str]:

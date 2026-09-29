@@ -35,12 +35,13 @@ class PlantDiseaseModel(ABC):
     """
 
     @abstractmethod
-    def predict(self, image: np.ndarray) -> PredictionOutput:
+    def predict(self, image: np.ndarray, crop_hint: Optional[str] = None) -> PredictionOutput:
         """
         Run inference on a preprocessed image.
         
         Args:
             image: RGB image as numpy array (H, W, 3), uint8
+            crop_hint: Optional field crop name to prioritize or contextualize
             
         Returns:
             PredictionOutput with disease classification results
