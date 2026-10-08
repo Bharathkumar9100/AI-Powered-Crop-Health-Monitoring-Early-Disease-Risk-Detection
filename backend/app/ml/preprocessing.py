@@ -129,8 +129,8 @@ def analyze_leaf_health_metrics(image: np.ndarray) -> dict:
     # 1. Healthy green coverage is dominant (>= 35% of leaf area)
     # 2. Lesion ratio is very low (< 3.5%)
     # 3. Mean ExG is positive (> 15)
-    is_botanically_healthy = bool(
-        (healthy_green_ratio >= 0.35) and (lesion_ratio < 0.035) and (mean_exg > 15.0)
+    is_botanically_healthy = (
+        healthy_green_ratio >= 0.35 and lesion_ratio < 0.035 and mean_exg > 15.0
     )
 
     return {

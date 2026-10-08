@@ -12,6 +12,7 @@ class FieldCreate(BaseModel):
     longitude: Optional[float] = Field(None, ge=-180, le=180)
     area_hectares: Optional[float] = Field(None, gt=0)
     planting_date: Optional[date] = None
+    boundary_geojson: Optional[str] = None
     notes: Optional[str] = Field(None, max_length=1000)
 
 
@@ -22,6 +23,7 @@ class FieldUpdate(BaseModel):
     longitude: Optional[float] = Field(None, ge=-180, le=180)
     area_hectares: Optional[float] = Field(None, gt=0)
     planting_date: Optional[date] = None
+    boundary_geojson: Optional[str] = None
     status: Optional[str] = None
     notes: Optional[str] = Field(None, max_length=1000)
 
@@ -35,6 +37,7 @@ class FieldResponse(BaseModel):
     longitude: Optional[float] = None
     area_hectares: Optional[float] = None
     planting_date: Optional[date] = None
+    boundary_geojson: Optional[str] = None
     status: str = "healthy"
     notes: Optional[str] = None
     created_at: datetime

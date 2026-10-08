@@ -36,9 +36,15 @@ class Settings(BaseSettings):
     # --- AI Chatbot ---
     GEMINI_API_KEY: Optional[str] = None
 
-    # --- Satellite ---
+    # --- Satellite & NDVI Analysis ---
     COPERNICUS_CLIENT_ID: Optional[str] = None
     COPERNICUS_CLIENT_SECRET: Optional[str] = None
+    PLANETARY_COMPUTER_API_KEY: Optional[str] = None
+    SENTINEL_DATA_PROVIDER: str = "copernicus"  # copernicus, stac, demo
+    SENTINEL_MAX_CLOUD_COVER: float = 20.0
+    SENTINEL_SEARCH_DAYS_BACK: int = 30
+    NDVI_HEALTHY_THRESHOLD: float = 0.60
+    NDVI_MODERATE_THRESHOLD: float = 0.35
 
     # --- Weather ---
     WEATHER_API_URL: str = "https://api.open-meteo.com/v1/forecast"

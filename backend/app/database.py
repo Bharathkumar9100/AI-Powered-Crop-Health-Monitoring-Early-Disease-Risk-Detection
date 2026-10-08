@@ -3,6 +3,7 @@ PhytoVision-X Database Configuration
 Async SQLAlchemy engine and session management.
 """
 
+from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
@@ -27,7 +28,7 @@ class Base(DeclarativeBase):
     pass
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency that provides a database session."""
     async with AsyncSessionLocal() as session:
         try:
@@ -40,10 +41,40 @@ async def get_db() -> AsyncSession:
             await session.close()
 
 
+def _safe_add_column(connection, table_name: str, column_name: str, column_type: str):
+    """Safely add column to SQLite table if it does not already exist."""
+    try:
+        cursor = connection.connection.cursor()
+        cursor.execute(f"PRAGMA table_info({table_name});")
+        existing_cols = [row[1] for row in cursor.fetchall()]
+        if column_name not in existing_cols:
+            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type};")
+    except Exception:
+        pass
+
+
+def _migrate_schema_sync(connection):
+    """Synchronous schema sync with non-destructive ALTER TABLE additions."""
+    Base.metadata.create_all(connection)
+    if "sqlite" in settings.DATABASE_URL:
+        _safe_add_column(connection, "fields", "boundary_geojson", "TEXT")
+        _safe_add_column(connection, "satellite_observations", "image_id", "VARCHAR(255)")
+        _safe_add_column(connection, "satellite_observations", "latitude", "FLOAT")
+        _safe_add_column(connection, "satellite_observations", "longitude", "FLOAT")
+        _safe_add_column(connection, "satellite_observations", "field_geometry", "TEXT")
+        _safe_add_column(connection, "satellite_observations", "rgb_image_path", "VARCHAR(500)")
+        _safe_add_column(connection, "satellite_observations", "stress_map_path", "VARCHAR(500)")
+        _safe_add_column(connection, "satellite_observations", "healthy_area_pct", "FLOAT")
+        _safe_add_column(connection, "satellite_observations", "moderate_stress_pct", "FLOAT")
+        _safe_add_column(connection, "satellite_observations", "high_stress_pct", "FLOAT")
+        _safe_add_column(connection, "satellite_observations", "processing_status", "VARCHAR(50)")
+        _safe_add_column(connection, "satellite_observations", "scientific_advisory", "TEXT")
+
+
 async def init_db():
-    """Create all tables on startup and ensure demo seed user exists."""
+    """Create all tables on startup, run safe schema migrations, and ensure demo seed user exists."""
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_migrate_schema_sync)
 
     # Seed demo farmer if not present
     async with AsyncSessionLocal() as session:

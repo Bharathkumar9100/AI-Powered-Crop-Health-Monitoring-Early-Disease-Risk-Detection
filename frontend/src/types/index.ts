@@ -21,6 +21,7 @@ export interface Field {
   longitude?: number;
   area_hectares?: number;
   planting_date?: string;
+  boundary_geojson?: string;
   status: 'healthy' | 'at_risk' | 'critical' | 'unknown';
   notes?: string;
   created_at: string;
@@ -113,6 +114,60 @@ export interface SatelliteNdviResponse {
   trend: 'improving' | 'stable' | 'declining';
   health_assessment: string;
   is_demo: boolean;
+}
+
+export interface SatelliteScene {
+  scene_id: string;
+  acquisition_date: string;
+  cloud_cover: number;
+  provider: string;
+  usable: boolean;
+  thumbnail_url?: string;
+}
+
+export interface FieldHealthSummary {
+  observation_id: number;
+  field_id: number;
+  field_name: string;
+  crop: string;
+  area_hectares?: number;
+  acquisition_date: string;
+  scene_id?: string;
+  cloud_cover?: number;
+  provider: string;
+  is_demo: boolean;
+  ndvi_mean: number;
+  ndvi_min: number;
+  ndvi_max: number;
+  healthy_area_pct: number;
+  moderate_stress_pct: number;
+  high_stress_pct: number;
+  ndvi_map_url?: string;
+  stress_map_url?: string;
+  rgb_image_url?: string;
+  status: string;
+  headline?: string;
+  recommendation?: string;
+  disclaimer: string;
+  bbox?: {
+    min_lng: number;
+    min_lat: number;
+    max_lng: number;
+    max_lat: number;
+  };
+  field_geometry?: any;
+}
+
+export interface StressMapData {
+  field_id: number;
+  observation_id?: number;
+  stress_map_url?: string;
+  ndvi_map_url?: string;
+  healthy_area_pct: number;
+  moderate_stress_pct: number;
+  high_stress_pct: number;
+  severity: string;
+  disclaimer: string;
 }
 
 export interface Alert {

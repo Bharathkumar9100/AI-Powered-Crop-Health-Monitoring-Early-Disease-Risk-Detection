@@ -25,6 +25,17 @@
 
 - **Explainable Leaf Disease Diagnosis**: Instant classification with visual Grad-CAM overlays highlighting exact leaf regions that influenced the AI prediction.
 - **🌿 Organic Fertilizers & Bio-Remedies Advisory**: Dedicated biological remediation protocol displayed directly below leaf inspection, powered by Google Gemini AI and backed by an agronomic organic protocol database (Panchagavya, Jeevamrutha, Vermicompost, Neem cake, Trichoderma, Pseudomonas).
+- **🛰️ Automatic Location & Sentinel-2 Satellite Crop Stress Analysis**:
+  - **Browser Geolocation**: Automatically requests permission to detect farmer coordinates without continuous tracking.
+  - **Interactive Boundary Drawing**: Draw polygon agricultural field boundaries directly over high-res Esri World Imagery with real-time geodesic hectare calculation.
+  - **Sentinel-2 Multi-spectral Processing**: Modular querying of Copernicus Data Space (CDSE) / Planetary Computer for cloud-filtered scenes (< 20% cloud cover).
+  - **Exact NDVI Calculation**: Computes `NDVI = (NIR - Red) / (NIR + Red)` using Band 8 and Band 4.
+  - **Classified Crop Stress Raster**: Visualizes vegetation health as an interactive map overlay:
+    - 🟢 **Healthy (NDVI ≥ 0.60)**
+    - 🟡 **Moderate Stress (0.35 ≤ NDVI < 0.60)**
+    - 🔴 **High Stress (NDVI < 0.35)**
+  - **Temporal Comparison**: Tracks previous vs. latest observation with Δ NDVI delta and multi-date SVG trend line charts.
+  - **Strict Scientific Guardrails**: Explicitly labels alerts as *crop stress / vegetative vigor early warning*, emphasizing that stress may stem from water deficits, soil nutrition, pests, or disease requiring field verification.
 - **Aerial Drone Scouting**: Process orthomosaic aerial imagery to identify localized canopy stress zones with GPS-guided scouting points.
 - **Copernicus Sentinel-2 NDVI Timeseries**: Track multi-week vegetative vigor curves and receive early warning alerts before visible foliar symptoms appear.
 - **Multilingual AI Crop Advisor**: Voice-to-text (SpeechRecognition) and text-to-speech (SpeechSynthesis) audio assistant supporting **English, Tamil (தமிழ்), Hindi (हिन्दी), Telugu (తెలుగు), and Malayalam (മലയാളം)**.
@@ -131,14 +142,78 @@ docker-compose up --build
 
 ---
 
-## 6. Running Backend Tests
+---
+
+## 6. Sentinel-2 Satellite & Location Setup
+
+PhytoVision-X features a modular satellite data ingestion architecture that functions out of the box with zero external configuration in **Demo Mode**, while allowing immediate drop-in connection to official European Space Agency (ESA) Copernicus Sentinel-2 services.
+
+### Data Provider Modes
+1. **Deterministic Demo Mode (Default when credentials omitted)**:
+   - Synthesizes realistic 128×128 multi-spectral reflectance tensors for user-drawn field polygons.
+   - Calculates true NDVI via `(NIR - Red) / (NIR + Red)`.
+   - Generates authentic PNG visual overlays (`uploads/satellite/`) for RGB satellite view, continuous NDVI gradient, and classified stress rasters.
+   - Clearly marks results with a `"DEMO DATA"` badge in the interface.
+2. **Live Copernicus Data Space Ecosystem (CDSE)**:
+   - Queries Sentinel-2 Level-2A surface reflectance data.
+   - Register a free account at [dataspace.copernicus.eu](https://dataspace.copernicus.eu).
+   - In your Copernicus profile, create an OAuth2 API client to get a Client ID and Client Secret.
+3. **Microsoft Planetary Computer (STAC API)**:
+   - Connects to the open Sentinel-2 Level-2A STAC catalogue on Azure.
+   - API key optional (free public tier available).
+
+### Environment Configuration (.env)
+```env
+# Provider: 'copernicus' (default) or 'planetary_computer'
+SENTINEL_DATA_PROVIDER=copernicus
+COPERNICUS_CLIENT_ID=your_client_id_here
+COPERNICUS_CLIENT_SECRET=your_client_secret_here
+PLANETARY_COMPUTER_API_KEY=your_key_here
+
+# Satellite Search & Quality Thresholds
+SENTINEL_MAX_CLOUD_COVER=20.0
+SENTINEL_SEARCH_DAYS_BACK=30
+
+# Rule-Based Stress Thresholds (Configurable)
+NDVI_HEALTHY_THRESHOLD=0.60
+NDVI_MODERATE_THRESHOLD=0.35
+```
+
+### Satellite & Field API Endpoints
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/location/current` | Returns server GPS fallback / default agricultural coordinates |
+| `POST` | `/api/fields/{field_id}/satellite/search` | Search Sentinel-2 scenes filtered by field polygon & cloud cover |
+| `POST` | `/api/fields/{field_id}/satellite/analyze` | Perform end-to-end band processing, NDVI & stress map generation |
+| `GET` | `/api/fields/{field_id}/satellite/latest` | Retrieve latest satellite observation & health metrics |
+| `GET` | `/api/fields/{field_id}/satellite/history` | Multi-temporal observation records for NDVI trend analysis |
+| `GET` | `/api/fields/{field_id}/ndvi` | Current NDVI statistics and raster overlay URLs |
+| `GET` | `/api/fields/{field_id}/stress-map` | Classified stress map percentages, color scheme, and scientific advisory |
+
+---
+
+## 7. Running Backend Tests
 
 ```bash
-python -m pytest backend/tests
+# Run complete test suite (includes leaf classification, UAV scouting & satellite service)
+python -m pytest backend/tests -v
+
+# Run satellite module tests specifically
+python -m pytest backend/tests/test_satellite_module.py -v
 ```
 
 ---
 
-## 7. Agronomic Disclaimer
+## 8. Agronomic & Scientific Disclaimer
 
-PhytoVision-X is designed to assist farmers, agricultural extension officers, and agronomists. Model predictions and satellite vegetative stress indices should be verified through ground scouting before applying chemical treatments. Follow local pesticide regulations and label directions for all spray applications.
+> **Important Scientific Labeling**:
+> Satellite-based vegetation indices measure canopy reflectance and vegetative vigor. In PhytoVision-X, satellite findings are explicitly designated as **"Potential Crop Stress Detected"** or **"Vegetation Health Early Warning"**, NEVER as a definitive or proven disease diagnosis.
+> Crop stress can be caused by:
+> - Water shortages or irrigation imbalances
+> - Nutrient deficiencies (Nitrogen, Potassium, Phosphorus)
+> - Soil salinity or drainage issues
+> - Pest or nematode infestations
+> - Extreme weather or temperature shock
+> - Pathogenic fungal, bacterial, or viral diseases
+>
+> Ground scouting and leaf pathology scans (via the **[ Analyze Leaf ]** tool) should always be conducted before applying chemical or biological remediation treatments.

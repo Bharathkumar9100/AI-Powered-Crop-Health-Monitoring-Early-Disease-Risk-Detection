@@ -12,7 +12,16 @@ import {
   User,
 } from '../types';
 
-const BACKEND_URL = 'https://ai-powered-crop-health-monitoring-early.onrender.com';
+const isLocalhost =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '');
+
+const BACKEND_URL = isLocalhost
+  ? 'http://127.0.0.1:8000'
+  : 'https://ai-powered-crop-health-monitoring-early.onrender.com';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || BACKEND_URL;
 
 export const api = axios.create({
@@ -222,6 +231,59 @@ export const satelliteApi = {
   },
   getWeather: async (fieldId: number): Promise<any> => {
     const res = await api.get(`/api/satellite/${fieldId}/weather`);
+    return res.data;
+  },
+  searchScenes: async (
+    fieldId: number,
+    params?: { geometry?: any; date_from?: string; date_to?: string; max_cloud_cover?: number }
+  ): Promise<any[]> => {
+    const res = await api.post(`/api/fields/${fieldId}/satellite/search`, params || {});
+    return Array.isArray(res.data) ? res.data : [];
+  },
+  analyzeField: async (
+    fieldId: number,
+    params?: { geometry?: any; scene_id?: string; max_cloud_cover?: number; healthy_threshold?: number; moderate_threshold?: number }
+  ): Promise<any> => {
+    const res = await api.post(`/api/fields/${fieldId}/satellite/analyze`, params || {});
+    const d = res.data || {};
+    return {
+      ...d,
+      ndvi_map_url: sanitizeMediaUrl(d.ndvi_map_url),
+      stress_map_url: sanitizeMediaUrl(d.stress_map_url),
+      rgb_image_url: sanitizeMediaUrl(d.rgb_image_url),
+    };
+  },
+  getLatest: async (fieldId: number): Promise<any> => {
+    const res = await api.get(`/api/fields/${fieldId}/satellite/latest`);
+    const d = res.data || {};
+    return {
+      ...d,
+      ndvi_map_url: sanitizeMediaUrl(d.ndvi_map_url),
+      stress_map_url: sanitizeMediaUrl(d.stress_map_url),
+      rgb_image_url: sanitizeMediaUrl(d.rgb_image_url),
+    };
+  },
+  getHistory: async (fieldId: number): Promise<any[]> => {
+    const res = await api.get(`/api/fields/${fieldId}/satellite/history`);
+    const list = Array.isArray(res.data) ? res.data : [];
+    return list.map((item: any) => ({
+      ...item,
+      ndvi_map_path: sanitizeMediaUrl(item.ndvi_map_path),
+      stress_map_path: sanitizeMediaUrl(item.stress_map_path),
+      rgb_image_path: sanitizeMediaUrl(item.rgb_image_path),
+    }));
+  },
+  getStressMap: async (fieldId: number): Promise<any> => {
+    const res = await api.get(`/api/fields/${fieldId}/stress-map`);
+    const d = res.data || {};
+    return {
+      ...d,
+      stress_map_url: sanitizeMediaUrl(d.stress_map_url),
+      ndvi_map_url: sanitizeMediaUrl(d.ndvi_map_url),
+    };
+  },
+  getCurrentLocation: async (): Promise<any> => {
+    const res = await api.get('/api/location/current');
     return res.data;
   },
 };

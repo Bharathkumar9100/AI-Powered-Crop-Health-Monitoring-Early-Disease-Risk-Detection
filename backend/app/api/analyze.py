@@ -60,7 +60,7 @@ async def analyze_image(
     from app.ml.grad_cam import generate_demo_gradcam, generate_real_gradcam
 
     # Validate field ownership if provided
-    field_crop = None
+    field_crop: Optional[str] = None
     if field_id:
         result = await db.execute(
             select(Field).where(Field.id == field_id, Field.user_id == current_user.id)
@@ -68,7 +68,7 @@ async def analyze_image(
         field_obj = result.scalar_one_or_none()
         if not field_obj:
             raise HTTPException(status_code=404, detail="Field not found")
-        field_crop = field_obj.crop
+        field_crop = str(field_obj.crop) if field_obj.crop is not None else None
 
     # Save uploaded image
     image_content = await image.read()

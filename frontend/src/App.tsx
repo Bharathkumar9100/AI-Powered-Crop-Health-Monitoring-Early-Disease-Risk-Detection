@@ -52,7 +52,15 @@ const MainApp: React.FC = () => {
       case 'uav-scan':
         return <UavPage />;
       case 'satellite-ndvi':
-        return <SatellitePage />;
+        return (
+          <SatellitePage
+            onNavigate={setActiveTab}
+            onNavigateToAnalyze={(fId) => {
+              if (fId) setSelectedFieldForAnalyze(fId);
+              setActiveTab('leaf-diagnosis');
+            }}
+          />
+        );
       case 'risk-map':
         return <RiskMapPage />;
       case 'fields':

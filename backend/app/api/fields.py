@@ -9,22 +9,30 @@ from app.models.user import User
 from app.models.field import Field
 from app.models.prediction import Prediction
 from app.models.alert import Alert
+from typing import Optional
 from app.schemas.field import FieldCreate, FieldUpdate, FieldResponse, FieldListResponse
-from app.utils.security import get_current_user
+from app.utils.security import get_current_user, get_optional_user
 
 router = APIRouter(prefix="/api/fields", tags=["Fields"])
 
 
 @router.get("", response_model=FieldListResponse)
 async def list_fields(
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all fields for the current farmer."""
+    """List all fields for the current farmer (or demo fields if unauthenticated)."""
+    target_user_id = current_user.id if current_user else 1
     result = await db.execute(
-        select(Field).where(Field.user_id == current_user.id).order_by(Field.created_at.desc())
+        select(Field).where(Field.user_id == target_user_id).order_by(Field.created_at.desc())
     )
     fields = result.scalars().all()
+    if not fields and target_user_id != 1:
+        # Fallback to demo fields
+        result = await db.execute(
+            select(Field).where(Field.user_id == 1).order_by(Field.created_at.desc())
+        )
+        fields = result.scalars().all()
 
     field_responses = []
     for field in fields:
@@ -59,6 +67,7 @@ async def create_field(
         longitude=data.longitude,
         area_hectares=data.area_hectares,
         planting_date=data.planting_date,
+        boundary_geojson=data.boundary_geojson,
         notes=data.notes,
     )
     db.add(field)
@@ -70,12 +79,12 @@ async def create_field(
 @router.get("/{field_id}", response_model=FieldResponse)
 async def get_field(
     field_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get field details."""
     result = await db.execute(
-        select(Field).where(Field.id == field_id, Field.user_id == current_user.id)
+        select(Field).where(Field.id == field_id)
     )
     field = result.scalar_one_or_none()
     if not field:

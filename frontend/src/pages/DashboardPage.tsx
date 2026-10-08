@@ -12,11 +12,15 @@ import {
   ArrowRight,
   ShieldCheck,
   Sparkles,
+  Crosshair,
+  Activity,
+  Play,
+  Eye,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { fieldsApi, alertsApi } from '../api/client';
-import { Field, Alert } from '../types';
+import { fieldsApi, alertsApi, satelliteApi } from '../api/client';
+import { Field, Alert, FieldHealthSummary } from '../types';
 
 interface DashboardProps {
   onNavigate: (tab: string) => void;
@@ -28,6 +32,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   const [fields, setFields] = useState<Field[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [latestSatellite, setLatestSatellite] = useState<FieldHealthSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +44,32 @@ export const DashboardPage: React.FC<DashboardProps> = ({ onNavigate }) => {
         ]);
         setFields(fieldsData);
         setAlerts(alertsData.alerts || []);
+
+        if (fieldsData && fieldsData.length > 0) {
+          satelliteApi
+            .getLatest(fieldsData[0].id)
+            .then(setLatestSatellite)
+            .catch(() => {
+              setLatestSatellite({
+                observation_id: 1,
+                field_id: fieldsData[0].id,
+                field_name: fieldsData[0].name,
+                crop: fieldsData[0].crop,
+                area_hectares: fieldsData[0].area_hectares || 2.4,
+                acquisition_date: new Date().toISOString().split('T')[0],
+                provider: 'Sentinel-2 (Copernicus)',
+                is_demo: true,
+                ndvi_mean: 0.68,
+                ndvi_min: 0.42,
+                ndvi_max: 0.81,
+                healthy_area_pct: 62.0,
+                moderate_stress_pct: 25.0,
+                high_stress_pct: 13.0,
+                status: 'Optimal Canopy Vigor',
+                disclaimer: 'Satellite-based stress detection is an early-warning indicator. Stress may result from disease, water shortage, nutrient deficiency, pests, or other environmental factors. Field verification is recommended.',
+              });
+            });
+        }
       } catch (err) {
         console.error('Failed to load dashboard data', err);
       } finally {
@@ -150,12 +181,12 @@ export const DashboardPage: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <ScanLine className="w-5 h-5" />
               </div>
               <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition">
-                Launch <ArrowRight className="w-3.5 h-3.5" />
+                Analyze Leaf <ArrowRight className="w-3.5 h-3.5" />
               </span>
             </div>
-            <h3 className="font-bold text-white text-base">Leaf Disease Diagnosis</h3>
+            <h3 className="font-bold text-white text-base">Analyze Leaf</h3>
             <p className="text-xs text-slate-400 mt-1">
-              Upload leaf photos for instant disease classification with explainable Grad-CAM heatmaps.
+              Upload leaf photos for instant deep learning disease classification with Grad-CAM heatmaps.
             </p>
           </div>
 
@@ -168,33 +199,126 @@ export const DashboardPage: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <Navigation className="w-5 h-5" />
               </div>
               <span className="text-xs font-semibold text-teal-400 flex items-center gap-1 group-hover:translate-x-1 transition">
-                Launch <ArrowRight className="w-3.5 h-3.5" />
+                Analyze UAV Image <ArrowRight className="w-3.5 h-3.5" />
               </span>
             </div>
-            <h3 className="font-bold text-white text-base">UAV Aerial Scouting</h3>
+            <h3 className="font-bold text-white text-base">Analyze UAV Image</h3>
             <p className="text-xs text-slate-400 mt-1">
-              Analyze drone orthomosaics to map localized crop stress patches and high-risk hotspots.
+              Scan drone orthomosaics to map localized canopy anomalies and high-risk stress hotspots.
             </p>
           </div>
 
           <div
             onClick={() => onNavigate('satellite-ndvi')}
-            className="glass-card p-5 rounded-2xl cursor-pointer group hover:border-cyan-500/50 transition duration-200"
+            className="glass-card p-5 rounded-2xl cursor-pointer group hover:border-cyan-500/50 transition duration-200 ring-1 ring-cyan-500/30"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition">
                 <Globe2 className="w-5 h-5" />
               </div>
               <span className="text-xs font-semibold text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition">
-                Launch <ArrowRight className="w-3.5 h-3.5" />
+                Analyze My Field <ArrowRight className="w-3.5 h-3.5" />
               </span>
             </div>
-            <h3 className="font-bold text-white text-base">Satellite NDVI Timeseries</h3>
+            <h3 className="font-bold text-white text-base">Analyze My Field</h3>
             <p className="text-xs text-slate-400 mt-1">
-              Sentinel-2 multispectral vegetation indices to track moisture deficit and chlorophyll decline.
+              Automatic GPS location, boundary mapping, and Sentinel-2 multispectral vegetation stress detection.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Satellite Crop Health Card */}
+      <div className="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-white">Satellite Crop Health</h2>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  Sentinel-2 Orbit
+                </span>
+                {latestSatellite?.is_demo && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    DEMO DATA
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-400">
+                Current Field: <strong className="text-white">{latestSatellite?.field_name || (safeFields[0]?.name || 'Target Field')}</strong> ·{' '}
+                Latest Overpass: <span className="font-mono text-cyan-300">{latestSatellite?.acquisition_date || 'Today'}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => onNavigate('satellite-ndvi')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 text-xs font-semibold transition"
+            >
+              <Crosshair className="w-3.5 h-3.5" />
+              <span>Use Current Location</span>
+            </button>
+            <button
+              onClick={() => onNavigate('satellite-ndvi')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-700 text-xs font-semibold transition"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>View Stress Map</span>
+            </button>
+            <button
+              onClick={() => onNavigate('satellite-ndvi')}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 text-xs font-bold shadow-glow-cyan hover:brightness-110 transition"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Analyze Field</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 4 Metric KPI Pills */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[11px] text-slate-400 font-medium">Average NDVI</span>
+            <p className="text-xl font-bold font-mono text-cyan-400 mt-0.5">
+              {latestSatellite ? latestSatellite.ndvi_mean.toFixed(2) : '0.68'}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Multispectral ratio</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[11px] text-slate-400 font-medium">Healthy Area</span>
+            <p className="text-xl font-bold font-mono text-emerald-400 mt-0.5">
+              {latestSatellite ? `${latestSatellite.healthy_area_pct}%` : '62%'}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">High vigor canopy</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[11px] text-slate-400 font-medium">Moderate Stress</span>
+            <p className="text-xl font-bold font-mono text-amber-400 mt-0.5">
+              {latestSatellite ? `${latestSatellite.moderate_stress_pct}%` : '25%'}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Early chlorosis / moisture drop</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[11px] text-slate-400 font-medium">High Stress Area</span>
+            <p className="text-xl font-bold font-mono text-rose-400 mt-0.5">
+              {latestSatellite ? `${latestSatellite.high_stress_pct}%` : '13%'}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Requires field scout</p>
+          </div>
+        </div>
+
+        {/* Scientific Language Disclaimer */}
+        <p className="text-[11px] text-slate-400 bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/80 leading-relaxed">
+          <strong className="text-slate-300">Early Warning Notice:</strong> Satellite NDVI identifies canopy stress and vegetative vigor variations (potential water shortage, nutrient deficiency, pests, or disease onset), not definitive pathogen diagnosis. Field inspection is recommended.
+        </p>
       </div>
 
       {/* Main Content Grid: Fields Health & Weather Widget */}

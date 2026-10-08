@@ -1,7 +1,7 @@
 """Field model for crop field management."""
 
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Date, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -18,6 +18,7 @@ class Field(Base):
     area_hectares = Column(Float, nullable=True)
     planting_date = Column(Date, nullable=True)
     status = Column(String(50), default="healthy")  # healthy, at_risk, critical, unknown
+    boundary_geojson = Column(Text, nullable=True)  # GeoJSON representation of field polygon
     notes = Column(String(1000), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
